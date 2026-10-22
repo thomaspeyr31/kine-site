@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Mon espace</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="/js/app.js" defer></script>
+  <script src="/js/compte.js" defer></script>
+</head>
+<body>
+  <header id="site-header" class="site-header"></header>
+
+  <main class="section">
+    <div class="container stack">
+      <h1>Bonjour <span id="hello"></span></h1>
+      <div id="alert" class="hidden" role="alert"></div>
+
+      <section class="stack">
+        <div class="spread"><h2>Mes programmes</h2><a href="/programmes.html">Catalogue →</a></div>
+        <div class="grid" id="my-programs"><div class="empty">Chargement…</div></div>
+      </section>
+
+      <section class="stack section">
+        <div class="spread"><h2>Mes rendez-vous</h2><a class="btn btn-accent btn-sm" href="/rdv.html">Nouveau rendez-vous</a></div>
+        <div id="my-appointments"><div class="empty">Chargement…</div></div>
+      </section>
+
+      <section class="stack">
+        <h2>Mes factures</h2>
+        <div id="my-orders"><div class="empty">Chargement…</div></div>
+      </section>
+
+      <section class="stack section">
+        <h2>Mon compte</h2>
+        <div class="grid">
+          <form id="profile-form" class="card form">
+            <h3>Mes informations</h3>
+            <div class="form-grid">
+              <div class="field"><label for="pf-first">Prénom</label><input id="pf-first" name="firstName" type="text" autocomplete="given-name" required maxlength="80"></div>
+              <div class="field"><label for="pf-last">Nom</label><input id="pf-last" name="lastName" type="text" autocomplete="family-name" required maxlength="80"></div>
+            </div>
+            <div class="field"><label for="pf-email">E-mail</label><input id="pf-email" type="email" disabled><span class="hint">Pour changer d'adresse, contactez le cabinet.</span></div>
+            <div class="field"><label for="pf-phone">Téléphone</label><input id="pf-phone" name="phone" type="tel" autocomplete="tel" maxlength="30"></div>
+            <button class="btn btn-ghost" type="submit">Enregistrer</button>
+          </form>
+
+          <form id="password-form" class="card form">
+            <h3>Mot de passe</h3>
+            <div class="field"><label for="pw-current">Mot de passe actuel</label><input id="pw-current" name="currentPassword" type="password" autocomplete="current-password" required></div>
+            <div class="field"><label for="pw-new">Nouveau mot de passe</label><input id="pw-new" name="newPassword" type="password" autocomplete="new-password" minlength="8" required><span class="hint">8 caractères minimum. Vos autres appareils seront déconnectés.</span></div>
+            <button class="btn btn-ghost" type="submit">Changer le mot de passe</button>
+          </form>
+
+          <div class="card stack">
+            <h3>Mes données</h3>
+            <p class="small muted">Téléchargez une copie de toutes les données vous concernant (profil, rendez-vous, achats, progression).</p>
+            <p><a class="btn btn-ghost" href="/api/me/export" download="mes-donnees.json">Télécharger mes données</a></p>
+            <h3>Supprimer mon compte</h3>
+            <p class="small muted">Vos rendez-vous à venir seront annulés et vous perdrez l'accès à vos programmes. Les factures sont conservées 10 ans (obligation légale).</p>
+            <form id="delete-form" class="form">
+              <div class="field"><label for="del-pw">Confirmez avec votre mot de passe</label><input id="del-pw" name="password" type="password" autocomplete="current-password" required></div>
+              <button class="btn btn-danger" type="submit">Supprimer définitivement mon compte</button>
+            </form>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer id="site-footer" class="site-footer"></footer>
+</body>
+</html>

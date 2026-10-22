@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prendre rendez-vous</title>
+  <meta name="description" content="Réservez en ligne votre bilan ou votre séance de kinésithérapie.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="/js/app.js" defer></script>
+  <script src="/js/rdv.js" defer></script>
+</head>
+<body>
+  <header id="site-header" class="site-header"></header>
+
+  <main class="section">
+    <div class="container stack">
+      <div>
+        <span class="eyebrow">Rendez-vous</span>
+        <h1>Prendre rendez-vous</h1>
+        <p class="muted">Choisissez un jour puis un créneau. Annulation gratuite en ligne jusqu'à <span data-site="cancelHours" data-fallback="24"></span> h avant.</p>
+      </div>
+
+      <div id="done" class="hidden" role="status"></div>
+
+      <div class="booking" id="booking">
+        <div class="stack">
+          <div class="calendar" id="calendar" aria-live="polite"></div>
+          <div class="cal-legend"><span>Disponible</span><span class="few">Derniers créneaux</span></div>
+        </div>
+
+        <div class="stack">
+          <div class="card stack">
+            <h3 id="slots-title">Choisissez un jour</h3>
+            <div class="slots" id="slots" role="group" aria-label="Créneaux horaires"></div>
+          </div>
+
+          <form id="form" class="card form hidden" novalidate>
+            <div class="recap" id="recap"></div>
+
+            <fieldset class="field">
+              <legend class="label">Type de rendez-vous *</legend>
+              <div class="type-options">
+                <label class="type-option"><input type="radio" name="type" value="bilan" checked><span><strong>Bilan initial</strong><span class="small muted">Première consultation</span></span></label>
+                <label class="type-option"><input type="radio" name="type" value="seance"><span><strong>Séance</strong><span class="small muted">Rééducation au cabinet</span></span></label>
+                <label class="type-option"><input type="radio" name="type" value="suivi"><span><strong>Suivi programme</strong><span class="small muted">Point sur votre programme</span></span></label>
+              </div>
+            </fieldset>
+
+            <div class="form-grid">
+              <div class="field"><label for="firstName">Prénom *</label><input id="firstName" name="firstName" type="text" autocomplete="given-name" required maxlength="80"></div>
+              <div class="field"><label for="lastName">Nom *</label><input id="lastName" name="lastName" type="text" autocomplete="family-name" required maxlength="80"></div>
+              <div class="field"><label for="email">E-mail *</label><input id="email" name="email" type="email" autocomplete="email" required maxlength="190"></div>
+              <div class="field"><label for="phone">Téléphone *</label><input id="phone" name="phone" type="tel" autocomplete="tel" required maxlength="30"></div>
+              <div class="field"><label for="birthDate">Date de naissance</label><input id="birthDate" name="birthDate" type="date" autocomplete="bday"></div>
+              <div class="field"><span class="label">Ordonnance</span><label class="check"><input type="checkbox" name="hasPrescription"> J'ai une prescription médicale</label></div>
+            </div>
+
+            <div class="field">
+              <label for="message">Motif de consultation</label>
+              <textarea id="message" name="message" maxlength="2000" placeholder="Ex. : douleur au genou droit depuis 3 semaines en courant…"></textarea>
+              <span class="hint">Facultatif, mais utile pour préparer votre séance.</span>
+            </div>
+
+            <label class="check"><input type="checkbox" name="consent" required> <span>J'accepte que mes données soient utilisées uniquement pour la gestion de mes rendez-vous (<a href="/mentions-legales.html" target="_blank">en savoir plus</a>). *</span></label>
+
+            <div id="form-alert" class="hidden" role="alert"></div>
+            <button class="btn btn-accent btn-block" type="submit">Confirmer le rendez-vous</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer id="site-footer" class="site-footer"></footer>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Administration</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="/js/app.js" defer></script>
+  <script src="/js/admin.js" defer></script>
+</head>
+<body>
+  <header id="site-header" class="site-header"></header>
+
+  <main class="section">
+    <div class="container">
+      <h1>Administration</h1>
+      <div class="stats" id="stats"></div>
+
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" data-tab="rdv" aria-selected="true">Rendez-vous</button>
+        <button class="tab" role="tab" data-tab="programs" aria-selected="false">Programmes</button>
+        <button class="tab" role="tab" data-tab="orders" aria-selected="false">Ventes</button>
+        <button class="tab" role="tab" data-tab="schedule" aria-selected="false">Horaires &amp; congés</button>
+      </div>
+      <div id="panel" class="stack" role="tabpanel"></div>
+    </div>
+  </main>
+
+  <dialog id="program-dialog" aria-labelledby="dlg-title">
+    <form id="program-form" class="form">
+      <div class="dlg-body stack">
+        <h2 id="dlg-title">Programme</h2>
+        <div class="form-grid">
+          <div class="field"><label for="p-title">Titre *</label><input id="p-title" name="title" type="text" required maxlength="150"></div>
+          <div class="field"><label for="p-area">Zone du corps *</label><input id="p-area" name="bodyArea" type="text" required maxlength="60" placeholder="Genou, Épaule, Dos…"></div>
+          <div class="field">
+            <label for="p-level">Niveau</label>
+            <select id="p-level" name="level">
+              <option value="debutant">Débutant</option>
+              <option value="intermediaire">Intermédiaire</option>
+              <option value="avance">Avancé</option>
+            </select>
+          </div>
+          <div class="field"><label for="p-price">Prix (€) *</label><input id="p-price" name="price" type="number" min="0.5" step="0.01" required></div>
+          <div class="field"><label for="p-weeks">Durée (semaines) *</label><input id="p-weeks" name="durationWeeks" type="number" min="1" max="52" value="4" required></div>
+          <div class="field"><label for="p-spw">Séances par semaine *</label><input id="p-spw" name="sessionsPerWeek" type="number" min="1" max="14" value="3" required></div>
+        </div>
+        <div class="field"><label for="p-short">Résumé (carte du catalogue) *</label><input id="p-short" name="shortDescription" type="text" required maxlength="255"></div>
+        <div class="field"><label for="p-desc">Description complète *</label><textarea id="p-desc" name="description" required></textarea></div>
+        <label class="check"><input type="checkbox" name="isPublished" checked> Publié dans le catalogue</label>
+
+        <div class="spread"><h3>Exercices</h3><button type="button" class="btn btn-ghost btn-sm" id="add-ex">+ Ajouter un exercice</button></div>
+        <p class="small muted">Colonnes : semaine · nom · séries · répétitions/durée · repos (s). Seule la semaine 1 est visible en aperçu avant achat.</p>
+        <div id="ex-list" class="stack"></div>
+        <div id="dlg-alert" class="hidden" role="alert"></div>
+      </div>
+      <div class="dlg-foot">
+        <button type="button" class="btn btn-ghost" id="dlg-cancel">Annuler</button>
+        <button type="submit" class="btn">Enregistrer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="appt-dialog" aria-labelledby="appt-title">
+    <form id="appt-form" class="form">
+      <div class="dlg-body stack">
+        <h2 id="appt-title">Rendez-vous</h2>
+        <div class="form-grid">
+          <div class="field"><label for="a-date">Date *</label><input id="a-date" name="date" type="date" required></div>
+          <div class="field"><label for="a-time">Heure *</label><input id="a-time" name="time" type="time" required></div>
+        </div>
+        <div class="js-create-only stack">
+          <div class="form-grid">
+            <div class="field"><label for="a-duration">Durée (min)</label><input id="a-duration" name="duration" type="number" min="10" max="240" step="5"></div>
+            <div class="field">
+              <label for="a-type">Type</label>
+              <select id="a-type" name="type">
+                <option value="seance">Séance de rééducation</option>
+                <option value="bilan">Bilan initial</option>
+                <option value="suivi">Suivi de programme</option>
+              </select>
+            </div>
+            <div class="field"><label for="a-first">Prénom *</label><input id="a-first" name="firstName" type="text" required maxlength="80"></div>
+            <div class="field"><label for="a-last">Nom *</label><input id="a-last" name="lastName" type="text" required maxlength="80"></div>
+            <div class="field"><label for="a-phone">Téléphone *</label><input id="a-phone" name="phone" type="tel" required maxlength="30"></div>
+            <div class="field"><label for="a-email">E-mail <span class="muted">(facultatif)</span></label><input id="a-email" name="email" type="email" maxlength="190"></div>
+            <div class="field"><label for="a-birth">Date de naissance</label><input id="a-birth" name="birthDate" type="date"></div>
+            <div class="field"><span class="label">Ordonnance</span><label class="check"><input type="checkbox" name="hasPrescription"> <span>Prescription médicale</span></label></div>
+          </div>
+          <div class="field"><label for="a-msg">Motif / notes</label><textarea id="a-msg" name="message" maxlength="2000"></textarea></div>
+        </div>
+        <label class="check"><input type="checkbox" name="notify" checked> <span>Prévenir le patient par e-mail (s'il a une adresse)</span></label>
+        <p class="small muted">Le cabinet peut placer un rendez-vous hors des horaires d'ouverture ; seul un chevauchement avec un autre rendez-vous est refusé.</p>
+        <div id="appt-alert" class="hidden" role="alert"></div>
+      </div>
+      <div class="dlg-foot">
+        <button type="button" class="btn btn-ghost" id="appt-cancel">Annuler</button>
+        <button type="submit" class="btn">Enregistrer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <footer id="site-footer" class="site-footer"></footer>
+</body>
+</html>

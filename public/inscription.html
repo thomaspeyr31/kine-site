@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Créer un compte</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="/js/app.js" defer></script>
+  <script src="/js/auth.js" defer></script>
+</head>
+<body>
+  <header id="site-header" class="site-header"></header>
+
+  <main class="container">
+    <div class="card auth-card stack">
+      <h1>Créer un compte</h1>
+      <p class="muted">Un compte est nécessaire pour acheter et suivre un programme.</p>
+      <form id="register-form" class="form">
+        <div class="form-grid">
+          <div class="field"><label for="firstName">Prénom</label><input id="firstName" name="firstName" type="text" autocomplete="given-name" required maxlength="80"></div>
+          <div class="field"><label for="lastName">Nom</label><input id="lastName" name="lastName" type="text" autocomplete="family-name" required maxlength="80"></div>
+        </div>
+        <div class="field"><label for="email">E-mail</label><input id="email" name="email" type="email" autocomplete="email" required maxlength="190"></div>
+        <div class="field"><label for="phone">Téléphone <span class="muted">(facultatif)</span></label><input id="phone" name="phone" type="tel" autocomplete="tel" maxlength="30"></div>
+        <div class="field">
+          <label for="password">Mot de passe</label>
+          <input id="password" name="password" type="password" autocomplete="new-password" minlength="8" required>
+          <span class="hint">8 caractères minimum.</span>
+        </div>
+        <div id="alert" class="hidden" role="alert"></div>
+        <button class="btn btn-block" type="submit">Créer mon compte</button>
+      </form>
+      <p class="center small">Déjà inscrit ? <a id="to-login" href="/connexion.html">Se connecter</a></p>
+    </div>
+  </main>
+
+  <footer id="site-footer" class="site-footer"></footer>
+</body>
+</html>

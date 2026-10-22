@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <meta name="referrer" content="no-referrer">
+  <title>Nouveau mot de passe</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="/js/app.js" defer></script>
+  <script src="/js/password-reset.js" defer></script>
+</head>
+<body>
+  <header id="site-header" class="site-header"></header>
+
+  <main class="container">
+    <div class="card auth-card stack">
+      <h1>Nouveau mot de passe</h1>
+      <form id="reset-form" class="form">
+        <div class="field">
+          <label for="password">Nouveau mot de passe</label>
+          <input id="password" name="password" type="password" autocomplete="new-password" minlength="8" required>
+          <span class="hint">8 caractères minimum. Vos autres appareils seront déconnectés.</span>
+        </div>
+        <div class="field"><label for="confirm">Confirmez le mot de passe</label><input id="confirm" name="confirm" type="password" autocomplete="new-password" minlength="8" required></div>
+        <div id="alert" class="hidden" role="alert"></div>
+        <button class="btn btn-block" type="submit">Enregistrer</button>
+      </form>
+    </div>
+  </main>
+
+  <footer id="site-footer" class="site-footer"></footer>
+</body>
+</html>

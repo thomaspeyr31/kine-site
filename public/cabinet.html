@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Le cabinet</title>
+  <meta name="description" content="Présentation du cabinet de kinésithérapie, horaires et accès.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="/js/app.js" defer></script>
+  <script src="/js/cabinet.js" defer></script>
+</head>
+<body>
+  <header id="site-header" class="site-header"></header>
+
+  <main class="section">
+    <div class="container program-layout">
+      <article class="stack">
+        <span class="eyebrow">Le cabinet</span>
+        <h1><span data-site="name"></span></h1>
+        <p class="lead muted"><span data-site="therapist"></span>, masseur-kinésithérapeute diplômé d'État, spécialisé en rééducation du sportif.</p>
+        <p>Le cabinet accueille sportifs amateurs et confirmés, mais aussi toute personne qui souhaite retrouver une vie active après une blessure, une opération ou une période de douleur.</p>
+        <h2>Spécialités</h2>
+        <ul>
+          <li>Rééducation post-opératoire (ligaments croisés, épaule, cheville)</li>
+          <li>Entorses, tendinopathies et lésions musculaires</li>
+          <li>Lombalgies et cervicalgies</li>
+          <li>Prévention des blessures et réathlétisation</li>
+        </ul>
+        <h2>Votre première séance</h2>
+        <p>Le bilan initial dure environ 45 minutes : entretien, examen, puis premiers exercices. Apportez votre ordonnance, votre carte Vitale, vos éventuels comptes rendus d'imagerie et une tenue de sport.</p>
+        <p><a class="btn btn-accent" href="/rdv.html">Réserver un bilan</a></p>
+      </article>
+
+      <aside class="card">
+        <h3>Horaires</h3>
+        <ul class="facts" id="hours"><li><span>Chargement…</span></li></ul>
+        <h3>Adresse</h3>
+        <p data-site="address"></p>
+        <h3>Contact</h3>
+        <p><span data-site="phone"></span><br><span data-site="email"></span></p>
+      </aside>
+    </div>
+  </main>
+
+  <footer id="site-footer" class="site-footer"></footer>
+</body>
+</html>

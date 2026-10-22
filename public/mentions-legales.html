@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mentions légales & confidentialité</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="/js/app.js" defer></script>
+</head>
+<body>
+  <header id="site-header" class="site-header"></header>
+
+  <main class="section">
+    <article class="narrow stack">
+      <h1>Mentions légales &amp; confidentialité</h1>
+      <p class="alert alert-info">Modèle à faire valider avant la mise en ligne. Les informations du cabinet viennent du fichier de configuration (.env).</p>
+
+      <h2>Éditeur du site</h2>
+      <p><span data-site="therapist"></span>, masseur-kinésithérapeute D.E.<br>
+        <span data-site="address"></span><br>
+        Téléphone : <span data-site="phone"></span> — E-mail : <span data-site="email"></span><br>
+        N° RPPS : <span data-site="rpps" data-fallback="[à compléter]"></span> — SIRET : <span data-site="siret" data-fallback="[à compléter]"></span><br>
+        Directeur de la publication : <span data-site="therapist"></span></p>
+
+      <h2>Hébergement</h2>
+      <p><span data-site="hostInfo" data-fallback="[Nom, adresse et téléphone de l'hébergeur — certifié HDS]"></span></p>
+
+      <h2>Données personnelles (RGPD)</h2>
+      <p><strong>Responsable du traitement :</strong> <span data-site="therapist"></span>.</p>
+      <p><strong>Données collectées :</strong> identité, coordonnées, date de naissance, motif de consultation (prise de rendez-vous) ; identité, e-mail et historique d'achats (compte client).</p>
+      <p><strong>Finalités :</strong> gestion des rendez-vous, accès aux programmes achetés, facturation. Aucune donnée n'est revendue ni utilisée à des fins publicitaires.</p>
+      <p><strong>Durée de conservation :</strong> rendez-vous supprimés automatiquement <span id="retention">3</span> ans après leur date ; compte client jusqu'à sa suppression (possible à tout moment depuis « Mon espace ») ; factures 10 ans (obligation comptable) ; liens de réinitialisation de mot de passe : 1 heure.</p>
+      <p><strong>Paiement :</strong> les paiements sont traités par Stripe ; aucune donnée bancaire n'est stockée sur ce site.</p>
+      <p><strong>Vos droits :</strong> accès, rectification, effacement, opposition et portabilité. Depuis « Mon espace », vous pouvez télécharger vos données et supprimer votre compte ; pour toute autre demande, écrivez à <span data-site="email"></span>. Vous pouvez également saisir la CNIL (cnil.fr).</p>
+      <p><strong>Destinataires :</strong> le kiné uniquement ; sous-traitants techniques : hébergeur, Stripe (paiement), prestataire d'envoi d'e-mails.</p>
+      <p><strong>Données de santé :</strong> le motif de consultation peut contenir des informations de santé. Pour un usage en production, l'hébergement doit être certifié HDS (Hébergeur de Données de Santé).</p>
+
+      <h2>Cookies</h2>
+      <p>Le site utilise uniquement un cookie technique de session, nécessaire à la connexion. Aucun cookie publicitaire ni de mesure d'audience.</p>
+
+      <h2>Avertissement médical</h2>
+      <p>Les programmes en ligne ne remplacent pas une consultation. En cas de douleur importante, inhabituelle ou persistante, arrêtez les exercices et consultez un professionnel de santé.</p>
+    </article>
+  </main>
+
+  <footer id="site-footer" class="site-footer"></footer>
+  <script src="/js/legal.js" defer></script>
+</body>
+</html>
