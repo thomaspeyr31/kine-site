@@ -1,0 +1,5 @@
+# Fins de ligne : Windows pour les lanceurs .bat (cmd.exe peut mal lire les "goto" sinon), Unix pour le reste
+*.bat -text
+*.sh  text eol=lf
+*.js  text eol=lf
+*.sql text eol=lf

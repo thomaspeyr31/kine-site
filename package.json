@@ -4,6 +4,7 @@
   "description": "Site de cabinet de kinésithérapie : programmes de rééducation en ligne et prise de rendez-vous",
   "main": "src/server.js",
   "scripts": {
+    "setup": "node src/setup.js",
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "db:init": "node src/init-db.js",

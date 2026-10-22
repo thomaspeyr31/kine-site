@@ -2,6 +2,7 @@
 
 Site complet : **front** (HTML/CSS/JS), **back** (Node.js + Express), **base MySQL / MariaDB**, paiement **Stripe**, **prise de rendez-vous** avec calendrier, **factures PDF**, prêt à être hébergé (**Docker + HTTPS automatique**).
 
+👉 **Windows : double-clic sur `demarrer-windows.bat` — voir [WINDOWS.md](WINDOWS.md)**
 👉 **Mise en ligne : voir [DEPLOIEMENT.md](DEPLOIEMENT.md)**
 
 ## Fonctionnalités
@@ -39,8 +40,16 @@ Site complet : **front** (HTML/CSS/JS), **back** (Node.js + Express), **base MyS
 
 ## Installation en local (développement)
 
-Prérequis : Node.js 20+ et MySQL 8 ou MariaDB 10.5+ démarré.
+Prérequis : Node.js 20+ et MySQL 8 ou MariaDB 10.4+ démarré (XAMPP, WAMP, MySQL Installer, Homebrew…).
 
+**Le plus simple (Windows, Mac, Linux)** :
+```bash
+npm install
+npm run setup      # crée .env, la base, l'utilisateur MySQL et les données de démo (demande le mot de passe root si besoin)
+npm start          # → http://localhost:3000
+```
+
+**Ou à la main :**
 ```bash
 npm install
 cp .env.example .env
@@ -95,6 +104,7 @@ En production, préférez un service d'envoi transactionnel (Brevo, Mailjet, OVH
 
 | Commande | Rôle |
 |---|---|
+| `npm run setup` | Installation complète : `.env`, base + utilisateur MySQL, données de démo (`-- --reset` pour tout remettre à zéro) |
 | `npm start` | Démarre le site |
 | `npm run dev` | Démarre et redémarre à chaque modification du code |
 | `npm run db:init` | **Développement** : recrée toutes les tables + démo (bloqué en production) |
