@@ -23,6 +23,8 @@ app.use(helmet({
       imgSrc: ["'self'", 'data:'],
       formAction: ["'self'"],
       frameAncestors: ["'none'"],
+      // Vidéos d'exercices intégrées (YouTube sans cookie, Vimeo)
+      frameSrc: ['https://www.youtube-nocookie.com', 'https://player.vimeo.com'],
       upgradeInsecureRequests: config.isProd ? [] : null,
     },
   },

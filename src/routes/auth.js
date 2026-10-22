@@ -7,6 +7,8 @@ const config = require('../config');
 const { HttpError, str, email, phone, password, wrap } = require('../lib/http');
 const { openSession } = require('../lib/auth');
 const { sendMail } = require('../lib/mailer');
+const { findOrCreatePatient } = require('../lib/patients');
+const { renderEmail } = require('../lib/email-template');
 
 const router = express.Router();
 
@@ -48,8 +50,15 @@ router.post('/register', limiter, wrap(async (req, res) => {
     if (err.code === 'ER_DUP_ENTRY') throw new HttpError(409, 'Un compte existe déjà avec cette adresse e-mail.');
     throw err;
   }
-  // Rattache les RDV pris avant la création du compte avec le même e-mail
+  // Fiche patient (reprend celle d'un RDV déjà pris avec cette adresse) + rattachement des anciens RDV
+  await findOrCreatePatient(db, { userId: r.insertId, firstName: data.first_name, lastName: data.last_name, email: data.email, phone: data.phone });
   await db.query('UPDATE appointments SET user_id = ? WHERE user_id IS NULL AND email = ?', [r.insertId, data.email]);
+  const welcome = renderEmail({
+    title: 'Bienvenue !',
+    paragraphs: [`Bonjour ${data.first_name},`, `Votre compte est créé. Vous pouvez y retrouver vos rendez-vous, vos programmes de rééducation et vos factures.`],
+    button: { label: 'Mon espace', url: `${config.baseUrl}/compte.html` },
+  });
+  sendMail({ to: data.email, subject: `Bienvenue — ${config.site.name}`, ...welcome });
   const user = await db.one('SELECT * FROM users WHERE id = ?', [r.insertId]);
   await openSession(req, user);
   res.status(201).json({ user: publicUser(user) });
@@ -84,11 +93,13 @@ router.post('/forgot', resetLimiter, wrap(async (req, res) => {
       'INSERT INTO password_resets (user_id, token_hash, expires_at) VALUES (?, ?, NOW() + INTERVAL ? MINUTE)',
       [user.id, sha256(token), RESET_MINUTES]
     );
-    sendMail({
-      to: user.email,
-      subject: 'Réinitialisation de votre mot de passe',
-      text: `Bonjour ${user.first_name},\n\nPour choisir un nouveau mot de passe, ouvrez ce lien (valable ${RESET_MINUTES} minutes) :\n${config.baseUrl}/reinitialiser.html?token=${token}\n\nSi vous n'êtes pas à l'origine de cette demande, ignorez simplement cet e-mail : votre mot de passe actuel reste valable.`,
+    const { html, text } = renderEmail({
+      title: 'Réinitialisation du mot de passe',
+      paragraphs: [`Bonjour ${user.first_name},`, `Pour choisir un nouveau mot de passe, cliquez sur le bouton ci-dessous. Le lien est valable ${RESET_MINUTES} minutes et ne peut servir qu'une fois.`],
+      button: { label: 'Choisir un nouveau mot de passe', url: `${config.baseUrl}/reinitialiser.html?token=${token}` },
+      after: ['Si vous n\'êtes pas à l\'origine de cette demande, ignorez simplement cet e-mail : votre mot de passe actuel reste valable.'],
     });
+    sendMail({ to: user.email, subject: 'Réinitialisation de votre mot de passe', text, html });
   }
   res.json({ ok: true });
 }));

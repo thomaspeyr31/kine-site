@@ -8,6 +8,8 @@ SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
 DROP TABLE IF EXISTS schema_migrations;
+DROP TABLE IF EXISTS session_logs;
+DROP TABLE IF EXISTS patients;
 DROP TABLE IF EXISTS counters;
 DROP TABLE IF EXISTS password_resets;
 DROP TABLE IF EXISTS program_progress;
@@ -132,11 +134,50 @@ CREATE TABLE counters (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------
+-- Fiches patients : une par personne, qu'elle ait un compte ou non.
+-- Regroupe ses RDV ; le kiné y ajoute ses notes privées.
+-- ---------------------------------------------------------
+CREATE TABLE patients (
+  id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id     INT UNSIGNED NULL,                    -- compte en ligne, s'il existe
+  first_name  VARCHAR(80)  NOT NULL,
+  last_name   VARCHAR(80)  NOT NULL,
+  email       VARCHAR(190) NULL,
+  phone       VARCHAR(30)  NULL,
+  birth_date  DATE NULL,
+  notes       TEXT NULL,                            -- notes privées du kiné (jamais visibles par le patient)
+  created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_patients_user (user_id),
+  KEY idx_patients_email (email),
+  KEY idx_patients_phone (phone),
+  KEY idx_patients_name (last_name, first_name),
+  CONSTRAINT fk_patients_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Journal de séances : le patient note chaque séance du programme (douleur, ressenti)
+CREATE TABLE session_logs (
+  id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id     INT UNSIGNED NOT NULL,
+  program_id  INT UNSIGNED NOT NULL,
+  week_number TINYINT UNSIGNED NOT NULL,
+  pain        TINYINT UNSIGNED NOT NULL,             -- douleur 0 à 10 (EVA)
+  difficulty  ENUM('facile','adaptee','difficile') NOT NULL DEFAULT 'adaptee',
+  comment     VARCHAR(1000) NULL,
+  created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_logs_user (user_id, program_id, created_at),
+  CONSTRAINT fk_logs_user    FOREIGN KEY (user_id)    REFERENCES users(id)    ON DELETE CASCADE,
+  CONSTRAINT fk_logs_program FOREIGN KEY (program_id) REFERENCES programs(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------
 -- Rendez-vous au cabinet (en ligne, ou saisis par le kiné)
+-- Les coordonnées sont copiées au moment de la réservation (trace de ce que le patient a saisi).
 -- ---------------------------------------------------------
 CREATE TABLE appointments (
   id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id          INT UNSIGNED NULL,
+  patient_id       INT UNSIGNED NULL,
   type             ENUM('bilan','seance','suivi') NOT NULL DEFAULT 'bilan',
   source           ENUM('web','cabinet') NOT NULL DEFAULT 'web',
   first_name       VARCHAR(80)  NOT NULL,
@@ -145,7 +186,8 @@ CREATE TABLE appointments (
   phone            VARCHAR(30)  NOT NULL,
   birth_date       DATE NULL,
   has_prescription TINYINT(1) NOT NULL DEFAULT 0,    -- ordonnance médicale
-  message          TEXT NULL,                          -- motif / douleur
+  message          TEXT NULL,                          -- motif saisi par le patient
+  staff_notes      TEXT NULL,                          -- notes de séance du kiné (privées)
   start_at         DATETIME NOT NULL,
   end_at           DATETIME NOT NULL,
   status           ENUM('confirme','annule','termine','absent') NOT NULL DEFAULT 'confirme',
@@ -158,7 +200,9 @@ CREATE TABLE appointments (
   UNIQUE KEY uq_appt_token (cancel_token),
   KEY idx_appt_start (start_at),
   KEY idx_appt_user (user_id),
-  CONSTRAINT fk_appt_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+  KEY idx_appt_patient (patient_id, start_at),
+  CONSTRAINT fk_appt_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+  CONSTRAINT fk_appt_patient FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------

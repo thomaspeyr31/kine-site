@@ -6,6 +6,9 @@ const config = require('../config');
 const { HttpError, str, email, phone, wrap, DATE_RE, TIME_RE } = require('../lib/http');
 const { slotsForDate, monthAvailability, endTime } = require('../lib/slots');
 const { sendMail } = require('../lib/mailer');
+const { renderEmail } = require('../lib/email-template');
+const { appointmentIcs } = require('../lib/ics');
+const { findOrCreatePatient } = require('../lib/patients');
 
 const router = express.Router();
 
@@ -21,42 +24,118 @@ const frWhen = (startAt) => {
   return new Date(`${day}T${time}`).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
     + ` à ${time.slice(0, 5).replace(':', 'h')}`;
 };
+const minutesBetween = (a, b) => Math.round((new Date(b.replace(' ', 'T')) - new Date(a.replace(' ', 'T'))) / 60000);
 
 const newToken = () => crypto.randomBytes(24).toString('hex');
 const cancelLink = (token) => `${config.baseUrl}/annulation.html?token=${token}`;
-const practical = 'Pensez à apporter votre ordonnance, votre carte Vitale et une tenue confortable.';
+const mapsLink = () => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(config.site.address)}`;
+const PRACTICAL = 'À apporter : ordonnance, carte Vitale, comptes rendus d\'imagerie éventuels et une tenue confortable (short, baskets).';
 
-// ---------- E-mails au patient ----------
+// ---------- E-mails au patient (HTML + invitation calendrier) ----------
+function icsAttachment(a, cancelled = false) {
+  return {
+    filename: cancelled ? 'annulation.ics' : 'rendez-vous.ics',
+    contentType: `text/calendar; charset=utf-8; method=${cancelled ? 'CANCEL' : 'PUBLISH'}`,
+    content: appointmentIcs(a, `${TYPES[a.type]} — ${config.site.name}`, { cancelled, description: PRACTICAL }),
+  };
+}
+
+const apptDetails = (a) => [
+  ['Quand', frWhen(a.start_at)],
+  ['Durée', `${minutesBetween(a.start_at, a.end_at)} min`],
+  ['Type', TYPES[a.type]],
+  ['Avec', config.site.therapist],
+  ['Où', config.site.address],
+];
+
 function mailConfirmation(a) {
-  return sendMail({
-    to: a.email,
-    subject: `Rendez-vous confirmé — ${frWhen(a.start_at)}`,
-    text: `Bonjour ${a.first_name},\n\nVotre rendez-vous (${TYPES[a.type]}) est confirmé le ${frWhen(a.start_at)}.\nAdresse : ${config.site.address}\n\n${practical}\n\nBesoin d'annuler ? ${cancelLink(a.cancel_token)}\n(annulation en ligne possible jusqu'à ${config.booking.cancelHours} h avant, sinon par téléphone au ${config.site.phone})`,
+  const { html, text } = renderEmail({
+    title: 'Votre rendez-vous est confirmé',
+    paragraphs: [`Bonjour ${a.first_name},`, 'Merci pour votre réservation. Voici le récapitulatif :'],
+    details: apptDetails(a),
+    note: PRACTICAL,
+    button: { label: 'Itinéraire', url: mapsLink() },
+    after: [
+      'L\'invitation jointe (rendez-vous.ics) ajoute le rendez-vous à votre agenda en un clic.',
+      `Un empêchement ? Annulez en ligne jusqu'à ${config.booking.cancelHours} h avant ; au-delà, merci de prévenir par téléphone au ${config.site.phone}.`,
+    ],
+    links: [{ label: 'Annuler ce rendez-vous', url: cancelLink(a.cancel_token) }],
   });
+  return sendMail({ to: a.email, subject: `Rendez-vous confirmé — ${frWhen(a.start_at)}`, text, html, attachments: [icsAttachment(a)] });
 }
 
 function mailMoved(a) {
-  return sendMail({
-    to: a.email,
-    subject: `Rendez-vous déplacé — ${frWhen(a.start_at)}`,
-    text: `Bonjour ${a.first_name},\n\nVotre rendez-vous (${TYPES[a.type]}) a été déplacé au ${frWhen(a.start_at)}.\nAdresse : ${config.site.address}\n\nCe nouvel horaire ne vous convient pas ? Appelez le cabinet au ${config.site.phone} ou annulez ici : ${cancelLink(a.cancel_token)}`,
+  const { html, text } = renderEmail({
+    title: 'Votre rendez-vous a été déplacé',
+    paragraphs: [`Bonjour ${a.first_name},`, 'Le cabinet a modifié l\'horaire de votre rendez-vous. Nouvel horaire :'],
+    details: apptDetails(a),
+    after: [
+      'Pensez à mettre votre agenda à jour avec l\'invitation jointe.',
+      `Ce créneau ne vous convient pas ? Appelez le cabinet au ${config.site.phone}.`,
+    ],
+    links: [{ label: 'Annuler ce rendez-vous', url: cancelLink(a.cancel_token) }],
   });
+  return sendMail({ to: a.email, subject: `Rendez-vous déplacé — ${frWhen(a.start_at)}`, text, html, attachments: [icsAttachment(a)] });
 }
 
 function mailCancelledByCabinet(a) {
-  return sendMail({
-    to: a.email,
-    subject: `Rendez-vous annulé — ${frWhen(a.start_at)}`,
-    text: `Bonjour ${a.first_name},\n\nNous sommes désolés : votre rendez-vous du ${frWhen(a.start_at)} a dû être annulé par le cabinet.\nVous pouvez réserver un autre créneau ici : ${config.baseUrl}/rdv.html ou nous appeler au ${config.site.phone}.`,
+  const { html, text } = renderEmail({
+    title: 'Votre rendez-vous est annulé',
+    paragraphs: [`Bonjour ${a.first_name},`, `Nous sommes désolés : votre rendez-vous du ${frWhen(a.start_at)} a dû être annulé par le cabinet.`],
+    button: { label: 'Choisir un autre créneau', url: `${config.baseUrl}/rdv.html` },
+    after: [`Vous pouvez aussi nous appeler au ${config.site.phone}.`],
   });
+  return sendMail({ to: a.email, subject: `Rendez-vous annulé — ${frWhen(a.start_at)}`, text, html, attachments: [icsAttachment(a, true)] });
+}
+
+function mailCancelledByPatient(a) {
+  const { html, text } = renderEmail({
+    title: 'Annulation confirmée',
+    paragraphs: [`Bonjour ${a.first_name},`, `Votre rendez-vous du ${frWhen(a.start_at)} est bien annulé.`],
+    button: { label: 'Reprendre rendez-vous', url: `${config.baseUrl}/rdv.html` },
+  });
+  return sendMail({ to: a.email, subject: `Annulation confirmée — ${frWhen(a.start_at)}`, text, html, attachments: [icsAttachment(a, true)] });
 }
 
 function mailReminder(a) {
-  return sendMail({
-    to: a.email,
-    subject: `Rappel : rendez-vous ${frWhen(a.start_at)}`,
-    text: `Bonjour ${a.first_name},\n\nPetit rappel : vous avez rendez-vous (${TYPES[a.type]}) le ${frWhen(a.start_at)}.\nAdresse : ${config.site.address}\n\n${practical}\n\nEmpêché ? Prévenez-nous au ${config.site.phone} ou via ce lien : ${cancelLink(a.cancel_token)}`,
+  const { html, text } = renderEmail({
+    title: 'Rappel : votre rendez-vous approche',
+    paragraphs: [`Bonjour ${a.first_name},`, 'Petit rappel pour votre prochain rendez-vous :'],
+    details: apptDetails(a),
+    note: PRACTICAL,
+    button: { label: 'Itinéraire', url: mapsLink() },
+    after: [`Empêché ? Prévenez-nous au ${config.site.phone}.`],
+    links: [{ label: 'Annuler ce rendez-vous', url: cancelLink(a.cancel_token) }],
   });
+  return sendMail({ to: a.email, subject: `Rappel : rendez-vous ${frWhen(a.start_at)}`, text, html });
+}
+
+// ---------- E-mails au cabinet ----------
+function mailCabinetNew(a, patientId) {
+  const age = a.birth_date ? Math.floor((Date.now() - new Date(a.birth_date)) / (365.25 * 86400e3)) : null;
+  const { html, text } = renderEmail({
+    title: `Nouveau rendez-vous : ${a.first_name} ${a.last_name}`,
+    details: [
+      ['Quand', frWhen(a.start_at)],
+      ['Type', TYPES[a.type]],
+      ['Patient', `${a.first_name} ${a.last_name}${age !== null ? ` (${age} ans)` : ''}`],
+      ['Téléphone', a.phone],
+      ['E-mail', a.email],
+      ['Ordonnance', a.has_prescription ? 'Oui' : 'Non'],
+      ['Motif', a.message || '—'],
+    ],
+    button: { label: 'Ouvrir la fiche patient', url: `${config.baseUrl}/admin.html?patient=${patientId}` },
+  });
+  return sendMail({ to: config.site.email, subject: `Nouveau RDV : ${a.first_name} ${a.last_name} — ${frWhen(a.start_at)}`, text, html });
+}
+
+function mailCabinetCancelled(a) {
+  const { html, text } = renderEmail({
+    title: `Annulation : ${a.first_name} ${a.last_name}`,
+    paragraphs: [`Le patient a annulé son rendez-vous du ${frWhen(a.start_at)}. Le créneau est de nouveau réservable en ligne.`],
+    button: { label: 'Voir l\'agenda', url: `${config.baseUrl}/admin.html` },
+  });
+  return sendMail({ to: config.site.email, subject: `RDV annulé par le patient : ${a.first_name} ${a.last_name} — ${frWhen(a.start_at)}`, text, html });
 }
 
 // ---------- Créneaux ----------
@@ -87,7 +166,7 @@ router.get('/hours', wrap(async (req, res) => {
   res.json({ hours });
 }));
 
-// Lit et valide les informations du patient (email facultatif pour une saisie par le cabinet)
+// Lit et valide les informations du patient (e-mail facultatif pour une saisie par le cabinet)
 function readPerson(b, { emailRequired = true, refDay } = {}) {
   const birth = b.birthDate ? String(b.birthDate) : null;
   if (birth && (!DATE_RE.test(birth) || (refDay && birth > refDay) || birth < '1900-01-01')) throw new HttpError(400, 'Date de naissance invalide.');
@@ -102,6 +181,17 @@ function readPerson(b, { emailRequired = true, refDay } = {}) {
     has_prescription: b.hasPrescription ? 1 : 0,
     message: str(b.message, { max: 2000, label: 'Message' }) || null,
   };
+}
+
+// Enregistre un RDV et le rattache à la fiche patient (créée si besoin)
+async function insertAppointment(appt, userId) {
+  return db.transaction(async (conn) => {
+    const patientId = appt.patient_id || await findOrCreatePatient(conn, {
+      userId, firstName: appt.first_name, lastName: appt.last_name, email: appt.email, phone: appt.phone, birthDate: appt.birth_date,
+    });
+    const [r] = await conn.query('INSERT INTO appointments SET ?', [{ ...appt, patient_id: patientId, user_id: userId || null }]);
+    return { id: r.insertId, patientId };
+  });
 }
 
 // Réserver en ligne (avec ou sans compte)
@@ -119,35 +209,39 @@ router.post('/', bookLimiter, wrap(async (req, res) => {
 
   const appt = {
     ...person,
-    user_id: req.user ? req.user.id : null,
     source: 'web',
     start_at: `${day} ${time}:00`,
     end_at: endTime(day, time),
     cancel_token: newToken(),
   };
+  let saved;
   try {
-    await db.query('INSERT INTO appointments SET ?', [appt]);
+    saved = await insertAppointment(appt, req.user ? req.user.id : null);
   } catch (err) {
     // Contrainte unique : quelqu'un a réservé le même créneau au même instant
     if (err.code === 'ER_DUP_ENTRY') throw new HttpError(409, 'Ce créneau vient d\'être réservé, merci d\'en choisir un autre.');
     throw err;
   }
+  const full = { ...appt, id: saved.id };
+  const emailSent = await mailConfirmation(full);
+  mailCabinetNew(full, saved.patientId);
 
-  mailConfirmation(appt);
-  sendMail({
-    to: config.site.email,
-    subject: `Nouveau RDV : ${appt.first_name} ${appt.last_name} — ${frWhen(appt.start_at)}`,
-    text: `${TYPES[appt.type]}\n${appt.first_name} ${appt.last_name}\n${appt.email} — ${appt.phone}\nNaissance : ${appt.birth_date || '—'}\nOrdonnance : ${appt.has_prescription ? 'oui' : 'non'}\nMotif : ${appt.message || '—'}\n\n${config.baseUrl}/admin.html`,
-  });
-
-  res.status(201).json({ ok: true, when: frWhen(appt.start_at) });
+  res.status(201).json({ ok: true, when: frWhen(appt.start_at), token: appt.cancel_token, emailSent: emailSent === true });
 }));
 
 // Consulter / annuler un RDV via le lien reçu par e-mail
 router.get('/by-token/:token', wrap(async (req, res) => {
-  const a = await db.one('SELECT type, first_name, start_at, status FROM appointments WHERE cancel_token = ?', [req.params.token]);
+  const a = await db.one('SELECT type, first_name, start_at, end_at, status FROM appointments WHERE cancel_token = ?', [req.params.token]);
   if (!a) throw new HttpError(404, 'Rendez-vous introuvable.');
-  res.json({ appointment: { ...a, type_label: TYPES[a.type] } });
+  res.json({ appointment: { ...a, type_label: TYPES[a.type] }, cancelHours: config.booking.cancelHours, phone: config.site.phone });
+}));
+
+// Fichier .ics "Ajouter à mon agenda"
+router.get('/by-token/:token/rendez-vous.ics', wrap(async (req, res) => {
+  const a = await db.one('SELECT * FROM appointments WHERE cancel_token = ?', [req.params.token]);
+  if (!a) throw new HttpError(404, 'Rendez-vous introuvable.');
+  res.set({ 'Content-Type': 'text/calendar; charset=utf-8', 'Content-Disposition': 'attachment; filename="rendez-vous.ics"' });
+  res.send(appointmentIcs(a, `${TYPES[a.type]} — ${config.site.name}`, { cancelled: a.status === 'annule', description: PRACTICAL }));
 }));
 
 router.post('/by-token/:token/cancel', wrap(async (req, res) => {
@@ -166,16 +260,12 @@ async function cancelAppointment(a) {
   }
   await db.query("UPDATE appointments SET status = 'annule' WHERE id = ?", [a.id]);
   const full = await db.one('SELECT * FROM appointments WHERE id = ?', [a.id]);
-  sendMail({
-    to: config.site.email,
-    subject: `RDV annulé par le patient : ${full.first_name} ${full.last_name} — ${frWhen(full.start_at)}`,
-    text: `Le créneau du ${frWhen(full.start_at)} est de nouveau disponible en ligne.`,
-  });
+  mailCancelledByPatient(full);
+  mailCabinetCancelled(full);
 }
 
 // ---------- Rappels (appelé par la tâche planifiée) ----------
-// Rappel par e-mail pour les RDV des prochaines 24 h, s'ils ont été pris plus de 24 h à l'avance… ou
-// au moins 2 h avant d'être envoyés (pas de rappel pour un RDV réservé à l'instant).
+// Rappel par e-mail pour les RDV des prochaines 24 h (pas pour un RDV réservé il y a moins de 2 h).
 async function sendReminders() {
   if (!config.booking.reminders) return 0;
   const due = await db.query(
@@ -195,6 +285,6 @@ async function sendReminders() {
 
 module.exports = router;
 Object.assign(module.exports, {
-  TYPES, frWhen, newToken, readPerson, cancelAppointment, sendReminders,
+  TYPES, frWhen, newToken, readPerson, insertAppointment, cancelAppointment, sendReminders,
   mailConfirmation, mailMoved, mailCancelledByCabinet,
 });

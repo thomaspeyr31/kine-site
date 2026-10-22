@@ -34,6 +34,8 @@ const dbError = (err) => (err.code === 'ECONNREFUSED'
   // Comptes de test : uniquement en développement (mots de passe connus de tous)
   if (!config.isProd && !process.argv.includes('--empty')) {
     await conn.query(fs.readFileSync(path.join(dir, 'demo-accounts.sql'), 'utf8'));
+    await require('./demo-data').insertDemoData(conn, config.booking.slotMinutes);
+    console.log('✔ Patients et rendez-vous de démonstration ajoutés');
     console.log('✔ Comptes de démonstration créés :');
     console.log('    Kiné (admin) : kine@cabinet.fr  /  MotDePasse123');
     console.log('    Patient      : patient@test.fr  /  patient1234');

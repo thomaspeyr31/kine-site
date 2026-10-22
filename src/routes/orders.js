@@ -5,6 +5,7 @@ const config = require('../config');
 const { HttpError, int, wrap } = require('../lib/http');
 const { requireAuth } = require('../lib/auth');
 const { sendMail } = require('../lib/mailer');
+const { renderEmail } = require('../lib/email-template');
 const { nextInvoiceNumber, invoicePdf } = require('../lib/invoice');
 const { ownsProgram } = require('./programs');
 
@@ -38,12 +39,15 @@ async function markPaid(sessionId, paymentIntent) {
   } catch (err) {
     console.error('Génération de facture échouée :', err.message);
   }
-  sendMail({
-    to: o.billing_email,
-    subject: `Votre programme « ${o.program_title} »`,
-    text: `Bonjour ${o.first_name || ''},\n\nMerci pour votre achat ! Votre programme est disponible dans votre espace :\n${config.baseUrl}/mon-programme.html?slug=${o.slug}\n\nVous trouverez votre facture ${o.invoice_number} en pièce jointe (elle reste téléchargeable depuis votre espace).\n\nArrêtez un exercice en cas de douleur inhabituelle et n'hésitez pas à réserver un suivi au cabinet.`,
-    attachments,
+  const { html, text } = renderEmail({
+    title: 'Votre programme est prêt',
+    paragraphs: [`Bonjour ${o.first_name || ''},`, `Merci pour votre achat ! Le programme « ${o.program_title} » est disponible dès maintenant dans votre espace, sur ordinateur comme sur téléphone.`],
+    details: [['Programme', o.program_title], ['Montant', `${(o.amount_cents / 100).toFixed(2).replace('.', ',')} €`], ['Facture', o.invoice_number]],
+    button: { label: 'Commencer le programme', url: `${config.baseUrl}/mon-programme.html?slug=${o.slug}` },
+    note: 'Conseil : notez chaque séance dans le journal (douleur et ressenti). Arrêtez un exercice si la douleur dépasse 3/10.',
+    after: ['Votre facture est jointe à cet e-mail ; elle reste téléchargeable depuis votre espace.'],
   });
+  sendMail({ to: o.billing_email, subject: `Votre programme « ${o.program_title} »`, text, html, attachments });
 }
 
 // Démarre le paiement d'un programme

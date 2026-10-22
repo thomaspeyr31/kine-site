@@ -49,6 +49,27 @@ router.put('/progress/:exerciseId', wrap(async (req, res) => {
   res.json({ ok: true });
 }));
 
+// Journal de séance : douleur (0-10), ressenti, commentaire — visible par le kiné dans la fiche patient
+const DIFFICULTY = ['facile', 'adaptee', 'difficile'];
+router.post('/sessions', wrap(async (req, res) => {
+  const b = req.body;
+  const programId = int(b.programId, { min: 1, label: 'Programme' });
+  if (!(await ownsProgram(req.user, programId))) throw new HttpError(404, 'Programme introuvable.');
+  const log = {
+    user_id: req.user.id,
+    program_id: programId,
+    week_number: int(b.week, { min: 1, max: 52, label: 'Semaine' }),
+    pain: int(b.pain, { min: 0, max: 10, label: 'Douleur' }),
+    difficulty: DIFFICULTY.includes(b.difficulty) ? b.difficulty : 'adaptee',
+    comment: str(b.comment, { max: 1000, label: 'Commentaire' }) || null,
+  };
+  // Une seule séance enregistrée par jour et par programme (évite les doubles clics)
+  const today = await db.one('SELECT id FROM session_logs WHERE user_id = ? AND program_id = ? AND DATE(created_at) = CURDATE()', [req.user.id, programId]);
+  if (today) await db.query('UPDATE session_logs SET ? WHERE id = ?', [log, today.id]);
+  else await db.query('INSERT INTO session_logs SET ?', [log]);
+  res.status(201).json({ ok: true, updated: !!today });
+}));
+
 // ---------- Commandes & factures ----------
 router.get('/orders', wrap(async (req, res) => {
   const orders = await db.query(
@@ -70,7 +91,7 @@ router.get('/orders/:id/invoice.pdf', wrap(async (req, res) => {
 // ---------- Rendez-vous ----------
 router.get('/appointments', wrap(async (req, res) => {
   const rows = await db.query(
-    'SELECT id, type, start_at, end_at, status FROM appointments WHERE user_id = ? ORDER BY start_at DESC',
+    'SELECT id, type, start_at, end_at, status, cancel_token FROM appointments WHERE user_id = ? ORDER BY start_at DESC',
     [req.user.id]
   );
   res.json({ appointments: rows.map((a) => ({ ...a, type_label: TYPES[a.type] })) });
@@ -114,8 +135,11 @@ router.get('/export', wrap(async (req, res) => {
               FROM program_progress pp JOIN program_exercises e ON e.id = pp.exercise_id JOIN programs p ON p.id = e.program_id
               WHERE pp.user_id = ?`, [req.user.id]),
   ]);
+  const sessions = await db.query(
+    `SELECT p.title AS programme, s.week_number AS semaine, s.pain AS douleur, s.difficulty AS ressenti, s.comment AS commentaire, s.created_at
+     FROM session_logs s JOIN programs p ON p.id = s.program_id WHERE s.user_id = ? ORDER BY s.created_at`, [req.user.id]);
   res.set('Content-Disposition', 'attachment; filename="mes-donnees.json"');
-  res.json({ exportedAt: new Date().toISOString(), profile, appointments, orders, progress });
+  res.json({ exportedAt: new Date().toISOString(), profile, appointments, orders, progress, sessions });
 }));
 
 router.post('/delete', sensitiveLimiter, wrap(async (req, res, next) => {

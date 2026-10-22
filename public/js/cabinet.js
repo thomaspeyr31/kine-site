@@ -1,6 +1,8 @@
 (async () => {
   await App.ready;
   const DAYS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+  const address = App.state.site?.address;
+  if (address) document.getElementById('maps-link').href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
   const { hours } = await App.api('/appointments/hours');
   document.getElementById('hours').innerHTML = DAYS.map((name, i) => {
     const ranges = hours.filter((h) => h.weekday === i + 1).map((h) => `${h.start.replace(':', 'h')} – ${h.end.replace(':', 'h')}`);

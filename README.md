@@ -10,16 +10,22 @@ Site complet : **front** (HTML/CSS/JS), **back** (Node.js + Express), **base MyS
 - Catalogue de programmes, filtre par zone, fiche avec aperçu de la semaine 1
 - Achat par carte (Stripe Checkout) avec acceptation des CGV et renonciation au droit de rétractation (contenu numérique)
 - Facture PDF numérotée envoyée par e-mail et téléchargeable
-- Programme semaine par semaine, exercices à cocher, progression enregistrée (retrouvée sur tous les appareils)
+- Programme semaine par semaine, exercices à cocher, progression enregistrée (retrouvée sur tous les appareils), **vidéos YouTube/Vimeo intégrées**
+- **Journal de séances** : douleur (0–10), ressenti et commentaire après chaque séance, avec conseils automatiques si la douleur est élevée
 - Prise de RDV : calendrier → créneau → infos (nom, e-mail, tél., naissance, ordonnance, motif)
-- E-mail de confirmation, **rappel la veille**, lien d'annulation (jusqu'à 24 h avant, réglable)
+- E-mails mis en forme (HTML) : confirmation avec **invitation calendrier (.ics)**, **rappel la veille**, lien d'annulation (jusqu'à 24 h avant, réglable)
+- Bouton « Ajouter à mon agenda » et itinéraire après la réservation et dans l'espace patient
 - Espace personnel : programmes, RDV, factures, modification du profil et du mot de passe
 - **Mot de passe oublié** (lien par e-mail, valable 1 h)
 - RGPD : téléchargement de ses données, suppression du compte
 
 **Kiné (`/admin.html`)**
-- Tableau de bord (RDV du jour, ventes, patients)
-- RDV : liste, statuts (confirmé, annulé, terminé, **absent**), **ajout manuel** (RDV pris par téléphone, e-mail facultatif), **déplacement**, e-mail automatique au patient
+- Tableau de bord (RDV du jour et de la semaine, prochain RDV, patients, ventes du mois)
+- **Agenda semaine** : horaires, congés et plages bloquées visibles, clic sur un créneau vide pour ajouter un RDV, vue liste
+- **Détail d'un RDV** : coordonnées, âge, ordonnance, motif, statut en un clic (confirmé, terminé, **absent**, annulé), **notes de séance privées**, déplacement
+- **Fiches patients** : recherche, identité modifiable, **notes privées**, historique complet des RDV, programmes achetés avec progression, **journal de douleur avec courbe**
+- Ajout de RDV pour un patient existant (recherche) ou nouveau (téléphone, e-mail facultatif) ; e-mail automatique au patient
+- E-mail au cabinet à chaque réservation avec lien direct vers la fiche patient
 - Programmes et exercices (modifier un programme conserve la progression des patients)
 - Ventes, factures PDF, **export comptable CSV**
 - Horaires d'ouverture, congés, **plages bloquées** (ex. réunion de 14 h à 16 h)
@@ -50,6 +56,8 @@ mariadb -e "CREATE DATABASE kine_db CHARACTER SET utf8mb4; CREATE USER 'kine'@'l
 npm run db:init        # tables + 6 programmes + comptes de démo (⚠️ efface les données existantes)
 npm start              # → http://localhost:3000
 ```
+
+En développement, `db:init` crée aussi 5 patients et une dizaine de RDV (passés et à venir) pour voir l'agenda rempli.
 
 Comptes de démonstration (développement uniquement, recréés à chaque `db:init`) :
 
@@ -108,15 +116,16 @@ src/
   jobs.js             rappels de RDV, purge RGPD
   migrate.js          installation / mise à jour de la base
   routes/             auth · programs · orders (Stripe) · appointments · account · admin
-  lib/                slots (créneaux) · invoice (factures PDF) · mailer · auth · http
-public/               pages HTML, css/, js/ (un script par page)
+  lib/                slots (créneaux) · patients (fiches) · invoice (factures PDF) · ics (agenda) · email-template · mailer · auth · http
+  demo-data.js        patients et RDV de démonstration (développement)
+public/               pages HTML, css/, js/ (un script par page ; js/admin/ : agenda, patients, gestion)
 deploy/               Caddyfile (HTTPS), backup.sh, nginx.conf
 Dockerfile, docker-compose.yml, ecosystem.config.js (pm2)
 ```
 
 ## Base de données
 
-`users` · `password_resets` · `programs` · `program_exercises` · `program_progress` · `orders` · `counters` (numéros de facture) · `appointments` · `opening_hours` · `closures` · `sessions` · `schema_migrations`.
+`users` · `patients` (fiches) · `password_resets` · `programs` · `program_exercises` · `program_progress` · `session_logs` (journal de séances) · `orders` · `counters` (numéros de facture) · `appointments` · `opening_hours` · `closures` · `sessions` · `schema_migrations`.
 
 - Un index unique empêche deux réservations sur le même créneau, même en cas de clics simultanés.
 - Les commandes gardent une copie du nom et de l'e-mail de facturation : les factures restent valables 10 ans même si le client supprime son compte.

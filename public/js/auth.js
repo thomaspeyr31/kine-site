@@ -3,8 +3,9 @@
   await App.ready;
   // Retour vers la page demandée après connexion (uniquement un chemin interne)
   const nextParam = App.params.get('next') || '';
-  const next = /^\/(?!\/)/.test(nextParam) ? nextParam : '/compte.html';
-  if (App.state.user) { location.replace(next); return; }
+  const home = (u) => (u?.role === 'admin' ? '/admin.html' : '/compte.html');
+  const next = /^\/(?!\/)/.test(nextParam) ? nextParam : null;
+  if (App.state.user) { location.replace(next || home(App.state.user)); return; }
 
   const qs = nextParam ? `?next=${encodeURIComponent(nextParam)}` : '';
   document.getElementById('to-register')?.setAttribute('href', `/inscription.html${qs}`);
@@ -31,8 +32,8 @@
     e.preventDefault();
     await App.busy(form.querySelector('[type="submit"]'), async () => {
       try {
-        await App.api(endpoint, { method: 'POST', body: App.formData(form) });
-        location.href = next;
+        const { user } = await App.api(endpoint, { method: 'POST', body: App.formData(form) });
+        location.href = next || home(user);
       } catch (err) {
         App.showAlert(alertBox, err.message);
       }

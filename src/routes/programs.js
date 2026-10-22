@@ -38,8 +38,13 @@ router.get('/:slug', wrap(async (req, res) => {
     'SELECT name FROM program_exercises WHERE program_id = ? AND week_number = 1 ORDER BY position',
     [program.id]
   );
+  // Structure du programme (nombre d'exercices par semaine), sans le détail
+  const weeks = await db.query(
+    'SELECT week_number AS week, COUNT(*) AS exercises FROM program_exercises WHERE program_id = ? GROUP BY week_number ORDER BY week_number',
+    [program.id]
+  );
   const owned = await ownsProgram(req.user, program.id);
-  res.json({ program, preview: preview.map((e) => e.name), owned });
+  res.json({ program, preview: preview.map((e) => e.name), weeks, owned });
 }));
 
 // Contenu complet : réservé aux acheteurs
@@ -55,7 +60,11 @@ router.get('/:slug/content', requireAuth, wrap(async (req, res) => {
      WHERE e.program_id = ? ORDER BY e.week_number, e.position, e.id`,
     [req.user.id, program.id]
   );
-  res.json({ program, exercises: exercises.map((e) => ({ ...e, done: !!e.done })) });
+  const sessions = await db.query(
+    'SELECT week_number, pain, difficulty, comment, created_at FROM session_logs WHERE user_id = ? AND program_id = ? ORDER BY created_at DESC LIMIT 30',
+    [req.user.id, program.id]
+  );
+  res.json({ program, exercises: exercises.map((e) => ({ ...e, done: !!e.done })), sessions });
 }));
 
 module.exports = router;

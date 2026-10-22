@@ -115,13 +115,27 @@
         document.getElementById('booking').classList.add('hidden');
         const done = document.getElementById('done');
         done.className = 'card stack';
+        const site = App.state.site;
+        const mail = r.emailSent
+          ? `<p>Un e-mail de confirmation vient de vous être envoyé à <strong>${esc(data.email)}</strong> (pensez à vérifier les courriers indésirables).</p>`
+          : site.mailConfigured
+            ? '<p class="alert alert-error small">L\'e-mail de confirmation n\'a pas pu être envoyé, mais votre rendez-vous est bien enregistré. Notez-le ou ajoutez-le à votre agenda ci-dessous.</p>'
+            : '<p class="alert alert-info small">Mode développement : l\'envoi d\'e-mails n\'est pas configuré (SMTP), l\'e-mail de confirmation est affiché dans le terminal du serveur.</p>';
         done.innerHTML = `
           <h2>✅ Rendez-vous confirmé</h2>
-          <p>Le <strong>${esc(r.when)}</strong>, au ${esc(App.state.site.address)}.</p>
-          <p class="muted">Un e-mail de confirmation vous a été envoyé à ${esc(data.email)}, avec un lien pour annuler si besoin (jusqu'à ${App.state.site.cancelHours} h avant).</p>
-          ${App.state.site.mailConfigured ? '' : '<p class="alert alert-info small">Mode développement : l\'envoi d\'e-mails n\'est pas configuré (SMTP). L\'e-mail de confirmation est affiché dans le terminal du serveur.</p>'}
-          <p class="muted">Pensez à apporter votre ordonnance, votre carte Vitale et une tenue confortable.</p>
-          <div class="row"><a class="btn" href="/">Retour à l'accueil</a>${App.state.user ? '<a class="btn btn-ghost" href="/compte.html">Mes rendez-vous</a>' : ''}</div>`;
+          <p class="recap">📅 ${esc(r.when.charAt(0).toUpperCase() + r.when.slice(1))}</p>
+          <p>${esc(site.therapist)} — ${esc(site.address)}</p>
+          ${mail}
+          <div class="row">
+            <a class="btn btn-accent" href="/api/appointments/by-token/${encodeURIComponent(r.token)}/rendez-vous.ics" download>📆 Ajouter à mon agenda</a>
+            <a class="btn btn-ghost" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(site.address)}" target="_blank" rel="noopener">Itinéraire</a>
+          </div>
+          <div class="card small stack">
+            <strong>À apporter</strong>
+            <p class="muted">Ordonnance, carte Vitale, comptes rendus d'imagerie éventuels et une tenue confortable (short, baskets).</p>
+          </div>
+          <p class="small muted">Un empêchement ? Annulez en ligne jusqu'à ${site.cancelHours} h avant${App.state.user ? ' depuis votre espace' : ' grâce au lien reçu par e-mail'}, ou appelez le ${esc(site.phone)}.</p>
+          <div class="row"><a class="btn" href="/">Retour à l'accueil</a>${App.state.user ? '<a class="btn btn-ghost" href="/compte.html">Mes rendez-vous</a>' : '<a class="btn btn-ghost" href="/inscription.html">Créer un compte pour suivre mes RDV</a>'}</div>`;
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } catch (err) {
         if (err.status === 409) {

@@ -3,6 +3,7 @@
   await App.ready;
   if (!App.requireLogin()) return;
   const me = App.state.user;
+  if (me.role === 'admin' && !App.params.get('session_id')) { location.replace('/admin.html'); return; }
   document.getElementById('hello').textContent = me.firstName;
   const alertBox = document.getElementById('alert');
 
@@ -51,7 +52,19 @@
       return;
     }
     const now = new Date();
-    box.innerHTML = `<div class="table-wrap"><table>
+    const next = [...appointments].reverse().find((a) => App.toDate(a.start_at) > now && a.status === 'confirme');
+    const ics = (a) => `/api/appointments/by-token/${encodeURIComponent(a.cancel_token)}/rendez-vous.ics`;
+    const nextHtml = next ? `
+      <div class="card next-card">
+        <div><span class="eyebrow">Prochain rendez-vous</span>
+          <strong>${App.fmtDateTime(next.start_at)}</strong>
+          <div class="muted">${esc(next.type_label)} · ${esc(App.state.site.address)}</div></div>
+        <div class="row">
+          <a class="btn btn-ghost btn-sm" href="${ics(next)}" download>📆 Ajouter à mon agenda</a>
+          <a class="btn btn-ghost btn-sm" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(App.state.site.address)}" target="_blank" rel="noopener">Itinéraire</a>
+        </div>
+      </div>` : '';
+    box.innerHTML = `${nextHtml}<div class="table-wrap"><table>
       <thead><tr><th>Date</th><th>Type</th><th>Statut</th><th></th></tr></thead>
       <tbody>${appointments.map((a) => {
         const [label, cls] = App.APPT_STATUS[a.status];
@@ -60,7 +73,7 @@
           <td>${App.fmtDateTime(a.start_at)}</td>
           <td>${esc(a.type_label)}</td>
           <td><span class="badge ${cls}">${label}</span></td>
-          <td>${future ? `<button class="btn btn-danger btn-sm" data-cancel="${a.id}">Annuler</button>` : ''}</td>
+          <td class="row">${future ? `<a class="btn btn-ghost btn-sm" href="${ics(a)}" download aria-label="Ajouter à mon agenda">📆</a><button class="btn btn-danger btn-sm" data-cancel="${a.id}">Annuler</button>` : ''}</td>
         </tr>`;
       }).join('')}</tbody></table></div>`;
   }

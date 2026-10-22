@@ -65,6 +65,19 @@ const App = (() => {
     try { return await fn(); } finally { btn.disabled = false; btn.textContent = label; }
   }
 
+  // Bandeau visible uniquement en développement : rappelle ce qui est simulé
+  function renderDevBanner() {
+    const s = state.site;
+    if (!s?.isDev || (!s.demoPayments && s.mailConfigured)) return;
+    const parts = [];
+    if (s.demoPayments) parts.push('paiements simulés (pas de clé Stripe)');
+    if (!s.mailConfigured) parts.push('e-mails affichés dans le terminal (SMTP non configuré)');
+    const bar = document.createElement('div');
+    bar.className = 'dev-banner';
+    bar.textContent = `Mode développement : ${parts.join(' · ')}`;
+    document.body.prepend(bar);
+  }
+
   function renderHeader() {
     const header = document.getElementById('site-header');
     if (!header) return;
@@ -79,8 +92,7 @@ const App = (() => {
         <nav class="nav" id="main-nav" aria-label="Navigation principale">
           ${link('/programmes.html', 'Programmes')}
           ${link('/cabinet.html', 'Le cabinet')}
-          ${u ? link('/compte.html', 'Mon espace') : link('/connexion.html', 'Connexion')}
-          ${u?.role === 'admin' ? link('/admin.html', 'Administration') : ''}
+          ${!u ? link('/connexion.html', 'Connexion') : u.role === 'admin' ? link('/admin.html', 'Administration') : link('/compte.html', 'Mon espace')}
           ${u ? '<a href="#" id="logout">Déconnexion</a>' : ''}
           <a class="btn btn-accent btn-sm" href="/rdv.html">Prendre rendez-vous</a>
         </nav>
@@ -142,6 +154,7 @@ const App = (() => {
       const v = site?.[el.dataset.site];
       el.textContent = v === undefined || v === null || v === '' ? (el.dataset.fallback || '') : v;
     });
+    renderDevBanner();
     renderHeader();
     renderFooter();
     return state;
@@ -159,7 +172,7 @@ const App = (() => {
       <div class="meta"><span class="muted small">${p.duration_weeks} semaines · ${p.sessions_per_week}×/sem.</span><span class="price">${euros(p.price_cents)}</span></div>
     </a>`;
 
-  const APPT_STATUS = { confirme: ['Confirmé', 'badge-ok'], annule: ['Annulé', 'badge-danger'], termine: ['Terminé', 'badge-muted'], absent: ['Absent', 'badge-warn'] };
+  const APPT_STATUS = { confirme: ['Confirmé', 'badge-ok'], termine: ['Terminé', 'badge-muted'], absent: ['Absent', 'badge-warn'], annule: ['Annulé', 'badge-danger'] };
 
   return { APPT_STATUS, api, esc, euros, LEVELS, programCard, areaColor, fmtDate, fmtTime, fmtDateTime, toDate, params, toast, showAlert, formData, busy, requireLogin, ready, state };
 })();
