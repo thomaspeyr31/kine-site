@@ -274,3 +274,7 @@ legend { padding: 0; margin-bottom: 6px; }
 @media (max-width: 900px) { .schedule-grid { grid-template-columns: 1fr; } }
 .hours-range input { width: 112px; }
 .buy-box .alert { margin-bottom: 12px; font-weight: 400; }
+#demo-accounts { font-weight: 400; }
+.demo-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+#demo-accounts code { background: rgba(255,255,255,.6); padding: 1px 5px; border-radius: 5px; }
+#demo-accounts .btn-sm { padding: 4px 12px; font-size: .8rem; background: #fff; }

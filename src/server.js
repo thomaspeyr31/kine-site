@@ -80,6 +80,7 @@ app.get('/api/site', (req, res) => res.json({
   retentionMonths: config.retention.appointmentsMonths,
   demoPayments: config.demoPayments,
   mailConfigured: !!config.smtp.host,
+  isDev: !config.isProd,
 }));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/programs', require('./routes/programs'));

@@ -31,8 +31,16 @@ const dbError = (err) => (err.code === 'ECONNREFUSED'
     await conn.query(fs.readFileSync(path.join(dir, 'seed.sql'), 'utf8'));
     console.log('✔ Données de démonstration insérées');
   }
+  // Comptes de test : uniquement en développement (mots de passe connus de tous)
+  if (!config.isProd && !process.argv.includes('--empty')) {
+    await conn.query(fs.readFileSync(path.join(dir, 'demo-accounts.sql'), 'utf8'));
+    console.log('✔ Comptes de démonstration créés :');
+    console.log('    Kiné (admin) : kine@cabinet.fr  /  MotDePasse123');
+    console.log('    Patient      : patient@test.fr  /  patient1234');
+  } else {
+    console.log('→ Créez maintenant le compte du kiné : npm run create-admin -- email "MotDePasse" Prénom Nom');
+  }
   await conn.end();
-  console.log('→ Créez maintenant le compte du kiné : npm run create-admin -- email "MotDePasse" Prénom Nom');
 })().catch((err) => {
   console.error('Erreur :', dbError(err));
   process.exit(1);

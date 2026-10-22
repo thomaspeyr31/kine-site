@@ -47,10 +47,18 @@ mariadb -e "CREATE DATABASE kine_db CHARACTER SET utf8mb4; CREATE USER 'kine'@'l
 (avec MySQL : `mysql -u root -p -e "…"`)
 
 ```bash
-npm run db:init        # tables + 6 programmes de démo (⚠️ efface les données existantes)
-npm run create-admin -- kine@cabinet.fr "MotDePasse123" Camille Martin
+npm run db:init        # tables + 6 programmes + comptes de démo (⚠️ efface les données existantes)
 npm start              # → http://localhost:3000
 ```
+
+Comptes de démonstration (développement uniquement, recréés à chaque `db:init`) :
+
+| Rôle | E-mail | Mot de passe |
+|---|---|---|
+| Kiné (administrateur) | `kine@cabinet.fr` | `MotDePasse123` |
+| Patient | `patient@test.fr` | `patient1234` |
+
+Ils sont aussi rappelés sur la page de connexion en mode développement (bouton « Remplir »).
 
 Sans clé Stripe, les achats sont validés sans paiement (mode démo). Sans SMTP, les e-mails s'affichent dans le terminal (voir « E-mails » ci-dessous).
 
@@ -92,6 +100,7 @@ En production, préférez un service d'envoi transactionnel (Brevo, Mailjet, OVH
 database/
   schema.sql          tables (installation neuve)
   seed.sql            programmes + horaires de démo
+  demo-accounts.sql   comptes kiné + patient de test (développement uniquement)
   migrations/         évolutions futures de la base
 src/
   server.js           Express, sécurité, routes, arrêt propre
